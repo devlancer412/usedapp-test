@@ -29,7 +29,6 @@ function App() {
   const tokenBalance =
     useTokenBalance(tokenAddress, account) || BigNumber.from(0);
   const rate = useCall({ contract, method: 'rate', args: [] });
-  const owner = useCall({ contract, method: 'owner', args: [] });
   const isWhitelist = useCall(
     account && {
       contract,
@@ -37,14 +36,24 @@ function App() {
       args: [account as string],
     }
   );
+  const isAdmin = useCall(
+    account && {
+      contract,
+      method: 'isAdmin',
+      args: [account as string],
+    }
+  );
   // send
-  const mint = useContractFunction(contract, 'mint', {
+  const mintFunc = useContractFunction(contract, 'mint', {
     transactionName: 'Wrap',
   });
-  const burn = useContractFunction(contract, 'burn', {
+  const burnFunc = useContractFunction(contract, 'burn', {
     transactionName: 'Wrap',
   });
-  const whitelist = useContractFunction(contract, 'setWhiteList', {
+  const whitelistFunc = useContractFunction(contract, 'setWhiteList', {
+    transactionName: 'Wrap',
+  });
+  const adminFunc = useContractFunction(contract, 'setAdmin', {
     transactionName: 'Wrap',
   });
   // state
@@ -54,14 +63,23 @@ function App() {
 
   const setWhiteList = async () => {
     try {
-      await whitelist.send(address, true);
+      await whitelistFunc.send(address);
     } catch (err) {
       console.log(err);
     }
   };
+
+  const setAdmin = async () => {
+    try {
+      await adminFunc.send(address);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
   const mintToken = async () => {
     try {
-      await mint.send({
+      await mintFunc.send({
         value: utils.parseEther(mintAmount.toString()),
       });
     } catch (err) {
@@ -71,7 +89,7 @@ function App() {
 
   const burnToken = async () => {
     try {
-      await burn.send(utils.parseEther(burnAmount.toString()));
+      await burnFunc.send(utils.parseEther(burnAmount.toString()));
     } catch (err) {
       console.log(err);
     }
@@ -139,7 +157,7 @@ function App() {
                         : formatEther(rate?.value[0] as BigNumber)}
                     </td>
                   </tr>
-                  {account === owner?.value?.at(0) ? (
+                  {isAdmin?.value?.at(0) ? (
                     <tr>
                       <th className='border-t-0 px-6 align-middle border-l-0 border-r-0 text-base whitespace-nowrap p-4 text-left'>
                         <input
@@ -149,13 +167,22 @@ function App() {
                         />
                       </th>
                       <td className='border-t-0 px-6 align-middle border-l-0 border-r-0 text-base whitespace-nowrap p-4 '>
-                        <button
-                          type='button'
-                          className='rounded-[5px] py-2 px-10 text-black bg-[#10E98C] text-[15px] leading-[22px]'
-                          onClick={setWhiteList}
-                        >
-                          Set Whitelist
-                        </button>
+                        <div className='grid grid-cols-2 gap-2'>
+                          <button
+                            type='button'
+                            className='rounded-[5px] py-2 px-10 text-black bg-[#10E98C] text-[15px] leading-[22px]'
+                            onClick={setWhiteList}
+                          >
+                            Set Whitelist
+                          </button>
+                          <button
+                            type='button'
+                            className='rounded-[5px] py-2 px-10 text-black bg-[#10E98C] text-[15px] leading-[22px]'
+                            onClick={setAdmin}
+                          >
+                            Set Admin
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ) : (
@@ -210,9 +237,7 @@ function App() {
                 </div>
               </div>
             ) : (
-              <div className='w-full text-red-600'>
-                You are not white list member
-              </div>
+              <div className='w-full'>Your wallet is not whitelisted</div>
             )}
           </div>
         </div>
