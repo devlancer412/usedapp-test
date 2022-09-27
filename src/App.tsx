@@ -9,18 +9,18 @@ import {
 import { formatEther } from '@ethersproject/units';
 import { BigNumber } from '@ethersproject/bignumber';
 import { Contract } from '@ethersproject/contracts';
-import { utils } from 'ethers';
+import { ethers, utils } from 'ethers';
 import { tokenAddress } from './constants';
 
-import { PegPalladium } from './gen/types';
-import PegPallamdiumAbi from './gen/PegPalladium.json';
-import { useState } from 'react';
+import { PeggedPalladium } from './gen/types';
+import PegPallamdiumAbi from './gen/PeggedPalladium.json';
+import { useEffect, useState } from 'react';
 
 const wethInterface = new utils.Interface(PegPallamdiumAbi.abi);
 const contract = new Contract(
   tokenAddress as string,
   wethInterface
-) as PegPalladium;
+) as PeggedPalladium;
 
 function App() {
   const { account, activateBrowserWallet } = useEthers();
@@ -36,11 +36,11 @@ function App() {
       args: [account as string],
     }
   );
-  const isAdmin = useCall(
+  const owner = useCall(
     account && {
       contract,
-      method: 'isAdmin',
-      args: [account as string],
+      method: 'owner',
+      args: [],
     }
   );
   // send
@@ -53,25 +53,25 @@ function App() {
   const whitelistFunc = useContractFunction(contract, 'setWhiteList', {
     transactionName: 'Wrap',
   });
-  const adminFunc = useContractFunction(contract, 'setAdmin', {
+
+  const getToken = useContractFunction(contract, 'getToken', {
+    transactionName: 'Wrap',
+  });
+  const getEth = useContractFunction(contract, 'getEth', {
+    transactionName: 'Wrap',
+  });
+  const setRate = useContractFunction(contract, 'setRate', {
     transactionName: 'Wrap',
   });
   // state
   const [mintAmount, setMintAmount] = useState<number>(0);
   const [burnAmount, setBurnAmount] = useState<number>(0);
+  const [exchangeRate, setExchangeRate] = useState<number>(0);
   const [address, setAddress] = useState<string>('');
 
   const setWhiteList = async () => {
     try {
-      await whitelistFunc.send(address);
-    } catch (err) {
-      console.log(err);
-    }
-  };
-
-  const setAdmin = async () => {
-    try {
-      await adminFunc.send(address);
+      await whitelistFunc.send(address, true);
     } catch (err) {
       console.log(err);
     }
@@ -79,9 +79,7 @@ function App() {
 
   const mintToken = async () => {
     try {
-      await mintFunc.send({
-        value: utils.parseEther(mintAmount.toString()),
-      });
+      await mintFunc.send(mintAmount.toString());
     } catch (err) {
       console.log(err);
     }
@@ -89,11 +87,43 @@ function App() {
 
   const burnToken = async () => {
     try {
-      await burnFunc.send(utils.parseEther(burnAmount.toString()));
+      await burnFunc.send(burnAmount);
     } catch (err) {
       console.log(err);
     }
   };
+
+  const swapEthToToken = async () => {
+    try {
+      await getToken.send({
+        value: ethers.utils.parseEther(mintAmount.toString()),
+      });
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const swapTokenToEth = async () => {
+    try {
+      await getEth.send(burnAmount);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const setSwapRate = async () => {
+    try {
+      await setRate.send(ethers.utils.parseEther(exchangeRate.toString()));
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  useEffect(() => {
+    if (rate?.value?.at(0)) {
+      setExchangeRate(parseFloat(formatEther(rate?.value?.at(0) as BigNumber)));
+    }
+  }, [rate]);
 
   return (
     <section className='py-1 bg-blueGray-50'>
@@ -144,7 +174,7 @@ function App() {
                       Token Balance
                     </th>
                     <td className='border-t-0 px-6 align-middle border-l-0 border-r-0 text-base whitespace-nowrap p-4 '>
-                      {formatEther(tokenBalance as BigNumber)}
+                      {tokenBalance.toString()}
                     </td>
                   </tr>
                   <tr>
@@ -157,55 +187,72 @@ function App() {
                         : formatEther(rate?.value[0] as BigNumber)}
                     </td>
                   </tr>
-                  {isAdmin?.value?.at(0) ? (
-                    <tr>
-                      <th className='border-t-0 px-6 align-middle border-l-0 border-r-0 text-base whitespace-nowrap p-4 text-left'>
-                        <input
-                          value={address}
-                          onChange={(e) => setAddress(e.target.value)}
-                          className='w-full'
-                        />
-                      </th>
-                      <td className='border-t-0 px-6 align-middle border-l-0 border-r-0 text-base whitespace-nowrap p-4 '>
-                        <div className='grid grid-cols-2 gap-2'>
-                          <button
-                            type='button'
-                            className='rounded-[5px] py-2 px-10 text-black bg-[#10E98C] text-[15px] leading-[22px]'
-                            onClick={setWhiteList}
-                          >
-                            Set Whitelist
-                          </button>
-                          <button
-                            type='button'
-                            className='rounded-[5px] py-2 px-10 text-black bg-[#10E98C] text-[15px] leading-[22px]'
-                            onClick={setAdmin}
-                          >
-                            Set Admin
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
+                  {account === owner?.value?.at(0) ? (
+                    <>
+                      <tr>
+                        <th className='border-t-0 px-6 align-middle border-l-0 border-r-0 text-base whitespace-nowrap p-4 text-left'>
+                          <input
+                            value={address}
+                            onChange={(e) => setAddress(e.target.value)}
+                            className='w-full'
+                          />
+                        </th>
+                        <td className='border-t-0 px-6 align-middle border-l-0 border-r-0 text-base whitespace-nowrap p-4 '>
+                          <div className='grid grid-cols-2 gap-2'>
+                            <button
+                              type='button'
+                              className='rounded-[5px] py-2 px-10 text-black bg-[#10E98C] text-[15px] leading-[22px]'
+                              onClick={setWhiteList}
+                            >
+                              Set Whitelist
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                      <tr>
+                        <th className='border-t-0 px-6 align-middle border-l-0 border-r-0 text-base whitespace-nowrap p-4 text-left'>
+                          <input
+                            value={exchangeRate}
+                            type='number'
+                            onChange={(e) =>
+                              setExchangeRate(parseFloat(e.target.value))
+                            }
+                            className='w-full'
+                          />
+                        </th>
+                        <td className='border-t-0 px-6 align-middle border-l-0 border-r-0 text-base whitespace-nowrap p-4 '>
+                          <div className='grid grid-cols-2 gap-2'>
+                            <button
+                              type='button'
+                              className='rounded-[5px] py-2 px-10 text-black bg-[#10E98C] text-[15px] leading-[22px]'
+                              onClick={setSwapRate}
+                            >
+                              Set Rate
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    </>
                   ) : (
                     <></>
                   )}
                 </tbody>
               </table>
             </div>
-            {isWhitelist?.value?.at(0) ? (
-              <div className='w-full grid grid-cols-2 gap-4 mt-5'>
-                <div className='bg-[#243034] flex flex-col items-center p-10 rounded-lg'>
-                  <h1 className='text-white text-[20px] leading-[30px] font-bold mb-5'>
-                    Mint
-                  </h1>
-                  <input
-                    type='number'
-                    min={0}
-                    max={parseFloat(formatEther(ethBalance))}
-                    step={0.1}
-                    value={mintAmount}
-                    onChange={(e) => setMintAmount(parseFloat(e.target.value))}
-                    className='text-center mb-5 w-40'
-                  />
+            <div className='w-full grid grid-cols-2 gap-4 mt-5'>
+              <div className='bg-[#243034] flex flex-col items-center p-10 rounded-lg'>
+                <h1 className='text-white text-[20px] leading-[30px] font-bold mb-5'>
+                  To Token
+                </h1>
+                <input
+                  type='number'
+                  min={0}
+                  max={parseFloat(formatEther(ethBalance))}
+                  value={mintAmount}
+                  onChange={(e) => setMintAmount(parseFloat(e.target.value))}
+                  className='text-center mb-5 w-40'
+                />
+                {account === owner?.value?.at(0) ? (
                   <button
                     type='button'
                     className='rounded-[5px] py-2 px-10 text-black bg-[#10E98C] text-[15px] leading-[22px]'
@@ -213,20 +260,34 @@ function App() {
                   >
                     Mint Token
                   </button>
-                </div>
-                <div className='bg-[#243034] flex flex-col items-center p-10 rounded-lg'>
-                  <h1 className='text-white text-[20px] leading-[30px] font-bold mb-5'>
-                    Burn
-                  </h1>
-                  <input
-                    type='number'
-                    min={0}
-                    max={parseFloat(formatEther(tokenBalance))}
-                    step={0.1}
-                    value={burnAmount}
-                    onChange={(e) => setBurnAmount(parseFloat(e.target.value))}
-                    className='text-center mb-5 w-40'
-                  />
+                ) : (
+                  <></>
+                )}
+                {isWhitelist?.value?.at(0) ? (
+                  <button
+                    type='button'
+                    className='rounded-[5px] py-2 px-10 text-black bg-[#10E98C] text-[15px] leading-[22px] mt-2'
+                    onClick={swapEthToToken}
+                  >
+                    Get Token
+                  </button>
+                ) : (
+                  <></>
+                )}
+              </div>
+              <div className='bg-[#243034] flex flex-col items-center p-10 rounded-lg'>
+                <h1 className='text-white text-[20px] leading-[30px] font-bold mb-5'>
+                  From Token
+                </h1>
+                <input
+                  type='number'
+                  min={0}
+                  max={tokenBalance.toNumber()}
+                  value={burnAmount}
+                  onChange={(e) => setBurnAmount(parseFloat(e.target.value))}
+                  className='text-center mb-5 w-40'
+                />
+                {account === owner?.value?.at(0) ? (
                   <button
                     type='button'
                     className='rounded-[5px] py-2 px-10 text-black bg-[#10E98C] text-[15px] leading-[22px]'
@@ -234,10 +295,26 @@ function App() {
                   >
                     Burn Token
                   </button>
-                </div>
+                ) : (
+                  <></>
+                )}
+                {isWhitelist?.value?.at(0) ? (
+                  <button
+                    type='button'
+                    className='rounded-[5px] py-2 px-10 text-black bg-[#10E98C] text-[15px] leading-[22px] mt-2'
+                    onClick={swapTokenToEth}
+                  >
+                    Swap Token
+                  </button>
+                ) : (
+                  <></>
+                )}
               </div>
-            ) : (
+            </div>
+            {!isWhitelist?.value?.at(0) ? (
               <div className='w-full'>Your wallet is not whitelisted</div>
+            ) : (
+              <></>
             )}
           </div>
         </div>
