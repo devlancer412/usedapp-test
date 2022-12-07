@@ -6,21 +6,22 @@ import {
   useTokenBalance,
   useContractFunction,
 } from '@usedapp/core';
-import { formatEther } from '@ethersproject/units';
+import { formatEther, parseEther, parseUnits } from '@ethersproject/units';
 import { BigNumber } from '@ethersproject/bignumber';
 import { Contract } from '@ethersproject/contracts';
 import { ethers, utils } from 'ethers';
 import { tokenAddress } from './constants';
 
-import { PeggedPalladium } from './gen/types';
-import PegPallamdiumAbi from './gen/PeggedPalladium.json';
+import { TestToken } from './gen/types';
+import PegPallamdiumAbi from './gen/TestToken.json';
 import { useEffect, useState } from 'react';
+import { isAddress } from 'ethers/lib/utils';
 
 const wethInterface = new utils.Interface(PegPallamdiumAbi.abi);
 const contract = new Contract(
   tokenAddress as string,
   wethInterface
-) as PeggedPalladium;
+) as TestToken;
 
 function App() {
   const { account, activateBrowserWallet } = useEthers();
@@ -28,14 +29,8 @@ function App() {
   const ethBalance = useEtherBalance(account) || BigNumber.from(0);
   const tokenBalance =
     useTokenBalance(tokenAddress, account) || BigNumber.from(0);
-  const rate = useCall({ contract, method: 'rate', args: [] });
-  const isWhitelist = useCall(
-    account && {
-      contract,
-      method: 'isWhitelist',
-      args: [account as string],
-    }
-  );
+  const tax = useCall({ contract, method: 'tax', args: [] });
+  const taxReceiver = useCall({ contract, method: 'taxReceiver', args: [] });
   const owner = useCall(
     account && {
       contract,
@@ -44,86 +39,61 @@ function App() {
     }
   );
   // send
-  const mintFunc = useContractFunction(contract, 'mint', {
+  const approveFunc = useContractFunction(contract, 'approveToken', {
     transactionName: 'Wrap',
   });
-  const burnFunc = useContractFunction(contract, 'burn', {
+  const airdropFunc = useContractFunction(contract, 'airdrop', {
     transactionName: 'Wrap',
   });
-  const whitelistFunc = useContractFunction(contract, 'setWhiteList', {
+  const setTaxFunc = useContractFunction(contract, 'setTax', {
     transactionName: 'Wrap',
   });
-
-  const getToken = useContractFunction(contract, 'getToken', {
-    transactionName: 'Wrap',
-  });
-  const getEth = useContractFunction(contract, 'getEth', {
-    transactionName: 'Wrap',
-  });
-  const setRate = useContractFunction(contract, 'setRate', {
+  const setTaxReceiverFunc = useContractFunction(contract, 'setTaxReceiver', {
     transactionName: 'Wrap',
   });
   // state
-  const [mintAmount, setMintAmount] = useState<number>(0);
-  const [burnAmount, setBurnAmount] = useState<number>(0);
+  const [approveAmount, setApproveAmount] = useState<number>(0);
+  const [airdropAmount, setAirdropAmount] = useState<number>(0);
   const [exchangeRate, setExchangeRate] = useState<number>(0);
   const [address, setAddress] = useState<string>('');
+  const [addresses, setAddresses] = useState<string>('');
+  const [taxReceiverAddress, setTaxReceiverAddress] = useState<string>('');
 
-  const setWhiteList = async () => {
-    try {
-      await whitelistFunc.send(address, true);
-    } catch (err) {
-      console.log(err);
-    }
+  const setTax = async () => {
+    const tx = await setTaxFunc.send(exchangeRate);
   };
 
-  const mintToken = async () => {
-    try {
-      await mintFunc.send(mintAmount.toString());
-    } catch (err) {
-      console.log(err);
+  const setTaxReceiver = async () => {
+    if (!isAddress(taxReceiverAddress)) {
+      setTaxReceiverAddress('Invalid Address');
+      return;
     }
+
+    const tx = await setTaxReceiverFunc.send(taxReceiverAddress);
   };
 
-  const burnToken = async () => {
-    try {
-      await burnFunc.send(burnAmount);
-    } catch (err) {
-      console.log(err);
+  const approve = async () => {
+    console.log(address);
+    if (!tax || !tax?.value || !isAddress(address)) {
+      return;
     }
+
+    const tx = await approveFunc.send(address, parseEther('' + approveAmount), {
+      value: (tax?.value[0] as BigNumber).mul(1e10),
+    });
   };
 
-  const swapEthToToken = async () => {
-    try {
-      await getToken.send({
-        value: ethers.utils.parseEther(mintAmount.toString()),
-      });
-    } catch (err) {
-      console.log(err);
-    }
-  };
+  const airdrop = async () => {
+    const addressList = addresses
+      .split(',')
+      .filter((address) => isAddress(address));
 
-  const swapTokenToEth = async () => {
-    try {
-      await getEth.send(burnAmount);
-    } catch (err) {
-      console.log(err);
+    if (!addressList.length || !airdropAmount) {
+      return;
     }
-  };
 
-  const setSwapRate = async () => {
-    try {
-      await setRate.send(ethers.utils.parseEther(exchangeRate.toString()));
-    } catch (err) {
-      console.log(err);
-    }
+    await airdropFunc.send(parseEther('' + airdropAmount), addressList);
   };
-
-  useEffect(() => {
-    if (rate?.value?.at(0)) {
-      setExchangeRate(parseFloat(formatEther(rate?.value?.at(0) as BigNumber)));
-    }
-  }, [rate]);
 
   return (
     <section className='py-1 bg-blueGray-50'>
@@ -133,7 +103,7 @@ function App() {
             <div className='flex flex-wrap items-center'>
               <div className='relative w-full px-4 max-w-full flex-grow flex-1'>
                 <h3 className='font-semibold text-lg text-blueGray-700'>
-                  Pegged Palladium Token Test
+                  Token Test
                 </h3>
               </div>
               <div className='relative w-full px-4 max-w-full flex-grow flex-1 text-right'>
@@ -161,7 +131,7 @@ function App() {
               <table className='items-center w-full border-collapse text-blueGray-700'>
                 <tbody>
                   <tr>
-                    <th className='border-t-0 px-6 align-middle border-l-0 border-r-0 text-base whitespace-nowrap p-4 text-left'>
+                    <th className='px-6 align-middle text-base whitespace-nowrap p-4 text-left'>
                       Eth Balance
                     </th>
                     <td className='border-t-0 px-6 align-middle border-l-0 border-r-0 text-base whitespace-nowrap p-4 '>
@@ -170,47 +140,37 @@ function App() {
                   </tr>
 
                   <tr>
-                    <th className='border-t-0 px-6 align-middle border-l-0 border-r-0 text-base whitespace-nowrap p-4 text-left'>
+                    <th className='px-6 align-middle text-base whitespace-nowrap p-4 text-left'>
                       Token Balance
                     </th>
                     <td className='border-t-0 px-6 align-middle border-l-0 border-r-0 text-base whitespace-nowrap p-4 '>
-                      {tokenBalance.toString()}
+                      {formatEther(tokenBalance)}
                     </td>
                   </tr>
                   <tr>
-                    <th className='border-t-0 px-6 align-middle border-l-0 border-r-0 text-base whitespace-nowrap p-4 text-left'>
-                      Swap Rate
+                    <th className='px-6 align-middle text-base whitespace-nowrap p-4 text-left'>
+                      Tax(Gwei)
                     </th>
                     <td className='border-t-0 px-6 align-middle border-l-0 border-r-0 text-base whitespace-nowrap p-4 '>
-                      {rate?.value === undefined
+                      {tax?.value === undefined
                         ? 0
-                        : formatEther(rate?.value[0] as BigNumber)}
+                        : (tax?.value[0] as BigNumber).toNumber()}
+                    </td>
+                  </tr>
+                  <tr>
+                    <th className='px-6 align-middle text-base whitespace-nowrap p-4 text-left'>
+                      Tax Receiver
+                    </th>
+                    <td className='border-t-0 px-6 align-middle border-l-0 border-r-0 text-base whitespace-nowrap p-4 '>
+                      {taxReceiver?.value === undefined
+                        ? ''
+                        : taxReceiver?.value}
                     </td>
                   </tr>
                   {account === owner?.value?.at(0) ? (
                     <>
                       <tr>
-                        <th className='border-t-0 px-6 align-middle border-l-0 border-r-0 text-base whitespace-nowrap p-4 text-left'>
-                          <input
-                            value={address}
-                            onChange={(e) => setAddress(e.target.value)}
-                            className='w-full'
-                          />
-                        </th>
-                        <td className='border-t-0 px-6 align-middle border-l-0 border-r-0 text-base whitespace-nowrap p-4 '>
-                          <div className='grid grid-cols-2 gap-2'>
-                            <button
-                              type='button'
-                              className='rounded-[5px] py-2 px-10 text-black bg-[#10E98C] text-[15px] leading-[22px]'
-                              onClick={setWhiteList}
-                            >
-                              Set Whitelist
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                      <tr>
-                        <th className='border-t-0 px-6 align-middle border-l-0 border-r-0 text-base whitespace-nowrap p-4 text-left'>
+                        <th className='px-6 align-middle text-base whitespace-nowrap p-4 text-left'>
                           <input
                             value={exchangeRate}
                             type='number'
@@ -225,9 +185,68 @@ function App() {
                             <button
                               type='button'
                               className='rounded-[5px] py-2 px-10 text-black bg-[#10E98C] text-[15px] leading-[22px]'
-                              onClick={setSwapRate}
+                              onClick={() => setTax()}
                             >
-                              Set Rate
+                              Set Tax
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <th className='px-6 align-middle text-base whitespace-nowrap p-4 text-left'>
+                          <input
+                            value={taxReceiverAddress}
+                            type='string'
+                            placeholder='Please insert receiver address here'
+                            onChange={(e) =>
+                              setTaxReceiverAddress(e.target.value)
+                            }
+                            className='w-full'
+                          />
+                        </th>
+                        <td className='border-t-0 px-6 align-middle border-l-0 border-r-0 text-base whitespace-nowrap p-4 '>
+                          <div className='grid grid-cols-2 gap-2'>
+                            <button
+                              type='button'
+                              className='rounded-[5px] py-2 px-10 text-black bg-[#10E98C] text-[15px] leading-[22px]'
+                              onClick={() => setTaxReceiver()}
+                            >
+                              Set Tax Receiver
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <th className='px-6 align-middle text-base whitespace-nowrap p-4 text-left'>
+                          <input
+                            value={addresses}
+                            type='string'
+                            placeholder="Please insert addresses with ','"
+                            onChange={(e) => setAddresses(e.target.value)}
+                            className='w-3/4'
+                          />
+                          <input
+                            value={airdropAmount ?? 0}
+                            type='number'
+                            placeholder='Please insert airdrop amount'
+                            onChange={(e) =>
+                              setAirdropAmount(
+                                parseFloat(e.target.value ?? '0')
+                              )
+                            }
+                            className='w-1/4'
+                          />
+                        </th>
+                        <td className='border-t-0 px-6 align-middle border-l-0 border-r-0 text-base whitespace-nowrap p-4 '>
+                          <div className='grid grid-cols-2 gap-2'>
+                            <button
+                              type='button'
+                              className='rounded-[5px] py-2 px-10 text-black bg-[#10E98C] text-[15px] leading-[22px]'
+                              onClick={() => airdrop()}
+                            >
+                              Airdrop
                             </button>
                           </div>
                         </td>
@@ -239,83 +258,38 @@ function App() {
                 </tbody>
               </table>
             </div>
-            <div className='w-full grid grid-cols-2 gap-4 mt-5'>
+            <div className='w-full grid grid-cols-1 gap-4 mt-5'>
               <div className='bg-[#243034] flex flex-col items-center p-10 rounded-lg'>
                 <h1 className='text-white text-[20px] leading-[30px] font-bold mb-5'>
-                  To Token
+                  Approve
                 </h1>
+                <input
+                  type='address'
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  className='text-center mb-5 w-full'
+                />
                 <input
                   type='number'
                   min={0}
-                  max={parseFloat(formatEther(ethBalance))}
-                  value={mintAmount}
-                  onChange={(e) => setMintAmount(parseFloat(e.target.value))}
+                  max={parseFloat(formatEther(tokenBalance))}
+                  value={approveAmount}
+                  onChange={(e) => setApproveAmount(parseFloat(e.target.value))}
                   className='text-center mb-5 w-40'
                 />
-                {account === owner?.value?.at(0) ? (
+                {account ? (
                   <button
                     type='button'
                     className='rounded-[5px] py-2 px-10 text-black bg-[#10E98C] text-[15px] leading-[22px]'
-                    onClick={mintToken}
+                    onClick={approve}
                   >
-                    Mint Token
-                  </button>
-                ) : (
-                  <></>
-                )}
-                {isWhitelist?.value?.at(0) ? (
-                  <button
-                    type='button'
-                    className='rounded-[5px] py-2 px-10 text-black bg-[#10E98C] text-[15px] leading-[22px] mt-2'
-                    onClick={swapEthToToken}
-                  >
-                    Get Token
-                  </button>
-                ) : (
-                  <></>
-                )}
-              </div>
-              <div className='bg-[#243034] flex flex-col items-center p-10 rounded-lg'>
-                <h1 className='text-white text-[20px] leading-[30px] font-bold mb-5'>
-                  From Token
-                </h1>
-                <input
-                  type='number'
-                  min={0}
-                  max={tokenBalance.toNumber()}
-                  value={burnAmount}
-                  onChange={(e) => setBurnAmount(parseFloat(e.target.value))}
-                  className='text-center mb-5 w-40'
-                />
-                {account === owner?.value?.at(0) ? (
-                  <button
-                    type='button'
-                    className='rounded-[5px] py-2 px-10 text-black bg-[#10E98C] text-[15px] leading-[22px]'
-                    onClick={burnToken}
-                  >
-                    Burn Token
-                  </button>
-                ) : (
-                  <></>
-                )}
-                {isWhitelist?.value?.at(0) ? (
-                  <button
-                    type='button'
-                    className='rounded-[5px] py-2 px-10 text-black bg-[#10E98C] text-[15px] leading-[22px] mt-2'
-                    onClick={swapTokenToEth}
-                  >
-                    Swap Token
+                    Approve
                   </button>
                 ) : (
                   <></>
                 )}
               </div>
             </div>
-            {!isWhitelist?.value?.at(0) ? (
-              <div className='w-full'>Your wallet is not whitelisted</div>
-            ) : (
-              <></>
-            )}
           </div>
         </div>
       </div>

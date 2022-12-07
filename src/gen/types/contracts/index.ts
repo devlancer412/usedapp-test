@@ -2,3 +2,4 @@
 /* tslint:disable */
 /* eslint-disable */
 export type { PeggedPalladium } from "./PeggedPalladium";
+export type { TestToken } from "./TestToken";

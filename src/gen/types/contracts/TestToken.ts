@@ -9,6 +9,7 @@ import type {
   CallOverrides,
   ContractTransaction,
   Overrides,
+  PayableOverrides,
   PopulatedTransaction,
   Signer,
   utils,
@@ -27,22 +28,24 @@ import type {
   PromiseOrValue,
 } from "../common";
 
-export interface PeggedPalladiumInterface extends utils.Interface {
+export interface TestTokenInterface extends utils.Interface {
   functions: {
+    "airdrop(uint256,address[])": FunctionFragment;
     "allowance(address,address)": FunctionFragment;
     "approve(address,uint256)": FunctionFragment;
+    "approveToken(address,uint256)": FunctionFragment;
     "balanceOf(address)": FunctionFragment;
-    "burn(uint256)": FunctionFragment;
     "decimals()": FunctionFragment;
     "decreaseAllowance(address,uint256)": FunctionFragment;
     "increaseAllowance(address,uint256)": FunctionFragment;
-    "isWhitelist(address)": FunctionFragment;
-    "mint(uint256)": FunctionFragment;
     "name()": FunctionFragment;
     "owner()": FunctionFragment;
     "renounceOwnership()": FunctionFragment;
-    "setWhiteList(address,bool)": FunctionFragment;
+    "setTax(uint256)": FunctionFragment;
+    "setTaxReceiver(address)": FunctionFragment;
     "symbol()": FunctionFragment;
+    "tax()": FunctionFragment;
+    "taxReceiver()": FunctionFragment;
     "totalSupply()": FunctionFragment;
     "transfer(address,uint256)": FunctionFragment;
     "transferFrom(address,address,uint256)": FunctionFragment;
@@ -51,26 +54,32 @@ export interface PeggedPalladiumInterface extends utils.Interface {
 
   getFunction(
     nameOrSignatureOrTopic:
+      | "airdrop"
       | "allowance"
       | "approve"
+      | "approveToken"
       | "balanceOf"
-      | "burn"
       | "decimals"
       | "decreaseAllowance"
       | "increaseAllowance"
-      | "isWhitelist"
-      | "mint"
       | "name"
       | "owner"
       | "renounceOwnership"
-      | "setWhiteList"
+      | "setTax"
+      | "setTaxReceiver"
       | "symbol"
+      | "tax"
+      | "taxReceiver"
       | "totalSupply"
       | "transfer"
       | "transferFrom"
       | "transferOwnership"
   ): FunctionFragment;
 
+  encodeFunctionData(
+    functionFragment: "airdrop",
+    values: [PromiseOrValue<BigNumberish>, PromiseOrValue<string>[]]
+  ): string;
   encodeFunctionData(
     functionFragment: "allowance",
     values: [PromiseOrValue<string>, PromiseOrValue<string>]
@@ -80,12 +89,12 @@ export interface PeggedPalladiumInterface extends utils.Interface {
     values: [PromiseOrValue<string>, PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(
-    functionFragment: "balanceOf",
-    values: [PromiseOrValue<string>]
+    functionFragment: "approveToken",
+    values: [PromiseOrValue<string>, PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(
-    functionFragment: "burn",
-    values: [PromiseOrValue<BigNumberish>]
+    functionFragment: "balanceOf",
+    values: [PromiseOrValue<string>]
   ): string;
   encodeFunctionData(functionFragment: "decimals", values?: undefined): string;
   encodeFunctionData(
@@ -96,14 +105,6 @@ export interface PeggedPalladiumInterface extends utils.Interface {
     functionFragment: "increaseAllowance",
     values: [PromiseOrValue<string>, PromiseOrValue<BigNumberish>]
   ): string;
-  encodeFunctionData(
-    functionFragment: "isWhitelist",
-    values: [PromiseOrValue<string>]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "mint",
-    values: [PromiseOrValue<BigNumberish>]
-  ): string;
   encodeFunctionData(functionFragment: "name", values?: undefined): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(
@@ -111,10 +112,19 @@ export interface PeggedPalladiumInterface extends utils.Interface {
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "setWhiteList",
-    values: [PromiseOrValue<string>, PromiseOrValue<boolean>]
+    functionFragment: "setTax",
+    values: [PromiseOrValue<BigNumberish>]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setTaxReceiver",
+    values: [PromiseOrValue<string>]
   ): string;
   encodeFunctionData(functionFragment: "symbol", values?: undefined): string;
+  encodeFunctionData(functionFragment: "tax", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "taxReceiver",
+    values?: undefined
+  ): string;
   encodeFunctionData(
     functionFragment: "totalSupply",
     values?: undefined
@@ -136,10 +146,14 @@ export interface PeggedPalladiumInterface extends utils.Interface {
     values: [PromiseOrValue<string>]
   ): string;
 
+  decodeFunctionResult(functionFragment: "airdrop", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "allowance", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "approve", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "approveToken",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "balanceOf", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "burn", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "decimals", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "decreaseAllowance",
@@ -149,22 +163,23 @@ export interface PeggedPalladiumInterface extends utils.Interface {
     functionFragment: "increaseAllowance",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(
-    functionFragment: "isWhitelist",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(functionFragment: "mint", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "name", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "renounceOwnership",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "setTax", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "setWhiteList",
+    functionFragment: "setTaxReceiver",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "symbol", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "tax", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "taxReceiver",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "totalSupply",
     data: BytesLike
@@ -182,14 +197,16 @@ export interface PeggedPalladiumInterface extends utils.Interface {
   events: {
     "Approval(address,address,uint256)": EventFragment;
     "OwnershipTransferred(address,address)": EventFragment;
+    "TaxChange(uint256)": EventFragment;
+    "TaxReceiverChange(address)": EventFragment;
     "Transfer(address,address,uint256)": EventFragment;
-    "WhitelistSet(address,bool)": EventFragment;
   };
 
   getEvent(nameOrSignatureOrTopic: "Approval"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "OwnershipTransferred"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "TaxChange"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "TaxReceiverChange"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "Transfer"): EventFragment;
-  getEvent(nameOrSignatureOrTopic: "WhitelistSet"): EventFragment;
 }
 
 export interface ApprovalEventObject {
@@ -216,6 +233,24 @@ export type OwnershipTransferredEvent = TypedEvent<
 export type OwnershipTransferredEventFilter =
   TypedEventFilter<OwnershipTransferredEvent>;
 
+export interface TaxChangeEventObject {
+  tax: BigNumber;
+}
+export type TaxChangeEvent = TypedEvent<[BigNumber], TaxChangeEventObject>;
+
+export type TaxChangeEventFilter = TypedEventFilter<TaxChangeEvent>;
+
+export interface TaxReceiverChangeEventObject {
+  to: string;
+}
+export type TaxReceiverChangeEvent = TypedEvent<
+  [string],
+  TaxReceiverChangeEventObject
+>;
+
+export type TaxReceiverChangeEventFilter =
+  TypedEventFilter<TaxReceiverChangeEvent>;
+
 export interface TransferEventObject {
   from: string;
   to: string;
@@ -228,23 +263,12 @@ export type TransferEvent = TypedEvent<
 
 export type TransferEventFilter = TypedEventFilter<TransferEvent>;
 
-export interface WhitelistSetEventObject {
-  to: string;
-  value: boolean;
-}
-export type WhitelistSetEvent = TypedEvent<
-  [string, boolean],
-  WhitelistSetEventObject
->;
-
-export type WhitelistSetEventFilter = TypedEventFilter<WhitelistSetEvent>;
-
-export interface PeggedPalladium extends BaseContract {
+export interface TestToken extends BaseContract {
   connect(signerOrProvider: Signer | Provider | string): this;
   attach(addressOrName: string): this;
   deployed(): Promise<this>;
 
-  interface: PeggedPalladiumInterface;
+  interface: TestTokenInterface;
 
   queryFilter<TEvent extends TypedEvent>(
     event: TypedEventFilter<TEvent>,
@@ -266,6 +290,12 @@ export interface PeggedPalladium extends BaseContract {
   removeListener: OnEvent<this>;
 
   functions: {
+    airdrop(
+      amount: PromiseOrValue<BigNumberish>,
+      addresses: PromiseOrValue<string>[],
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
+
     allowance(
       owner: PromiseOrValue<string>,
       spender: PromiseOrValue<string>,
@@ -278,15 +308,16 @@ export interface PeggedPalladium extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
+    approveToken(
+      spender: PromiseOrValue<string>,
+      amount: PromiseOrValue<BigNumberish>,
+      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
+
     balanceOf(
       account: PromiseOrValue<string>,
       overrides?: CallOverrides
     ): Promise<[BigNumber]>;
-
-    burn(
-      amount: PromiseOrValue<BigNumberish>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<ContractTransaction>;
 
     decimals(overrides?: CallOverrides): Promise<[number]>;
 
@@ -302,16 +333,6 @@ export interface PeggedPalladium extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
-    isWhitelist(
-      to: PromiseOrValue<string>,
-      overrides?: CallOverrides
-    ): Promise<[boolean]>;
-
-    mint(
-      amount: PromiseOrValue<BigNumberish>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<ContractTransaction>;
-
     name(overrides?: CallOverrides): Promise<[string]>;
 
     owner(overrides?: CallOverrides): Promise<[string]>;
@@ -320,13 +341,21 @@ export interface PeggedPalladium extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
-    setWhiteList(
-      to: PromiseOrValue<string>,
-      value: PromiseOrValue<boolean>,
+    setTax(
+      _tax: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
+
+    setTaxReceiver(
+      _taxReceiver: PromiseOrValue<string>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
     symbol(overrides?: CallOverrides): Promise<[string]>;
+
+    tax(overrides?: CallOverrides): Promise<[BigNumber]>;
+
+    taxReceiver(overrides?: CallOverrides): Promise<[string]>;
 
     totalSupply(overrides?: CallOverrides): Promise<[BigNumber]>;
 
@@ -349,6 +378,12 @@ export interface PeggedPalladium extends BaseContract {
     ): Promise<ContractTransaction>;
   };
 
+  airdrop(
+    amount: PromiseOrValue<BigNumberish>,
+    addresses: PromiseOrValue<string>[],
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
   allowance(
     owner: PromiseOrValue<string>,
     spender: PromiseOrValue<string>,
@@ -361,15 +396,16 @@ export interface PeggedPalladium extends BaseContract {
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
+  approveToken(
+    spender: PromiseOrValue<string>,
+    amount: PromiseOrValue<BigNumberish>,
+    overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
   balanceOf(
     account: PromiseOrValue<string>,
     overrides?: CallOverrides
   ): Promise<BigNumber>;
-
-  burn(
-    amount: PromiseOrValue<BigNumberish>,
-    overrides?: Overrides & { from?: PromiseOrValue<string> }
-  ): Promise<ContractTransaction>;
 
   decimals(overrides?: CallOverrides): Promise<number>;
 
@@ -385,16 +421,6 @@ export interface PeggedPalladium extends BaseContract {
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
-  isWhitelist(
-    to: PromiseOrValue<string>,
-    overrides?: CallOverrides
-  ): Promise<boolean>;
-
-  mint(
-    amount: PromiseOrValue<BigNumberish>,
-    overrides?: Overrides & { from?: PromiseOrValue<string> }
-  ): Promise<ContractTransaction>;
-
   name(overrides?: CallOverrides): Promise<string>;
 
   owner(overrides?: CallOverrides): Promise<string>;
@@ -403,13 +429,21 @@ export interface PeggedPalladium extends BaseContract {
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
-  setWhiteList(
-    to: PromiseOrValue<string>,
-    value: PromiseOrValue<boolean>,
+  setTax(
+    _tax: PromiseOrValue<BigNumberish>,
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
+  setTaxReceiver(
+    _taxReceiver: PromiseOrValue<string>,
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
   symbol(overrides?: CallOverrides): Promise<string>;
+
+  tax(overrides?: CallOverrides): Promise<BigNumber>;
+
+  taxReceiver(overrides?: CallOverrides): Promise<string>;
 
   totalSupply(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -432,6 +466,12 @@ export interface PeggedPalladium extends BaseContract {
   ): Promise<ContractTransaction>;
 
   callStatic: {
+    airdrop(
+      amount: PromiseOrValue<BigNumberish>,
+      addresses: PromiseOrValue<string>[],
+      overrides?: CallOverrides
+    ): Promise<void>;
+
     allowance(
       owner: PromiseOrValue<string>,
       spender: PromiseOrValue<string>,
@@ -444,15 +484,16 @@ export interface PeggedPalladium extends BaseContract {
       overrides?: CallOverrides
     ): Promise<boolean>;
 
+    approveToken(
+      spender: PromiseOrValue<string>,
+      amount: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<boolean>;
+
     balanceOf(
       account: PromiseOrValue<string>,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
-
-    burn(
-      amount: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides
-    ): Promise<void>;
 
     decimals(overrides?: CallOverrides): Promise<number>;
 
@@ -468,29 +509,27 @@ export interface PeggedPalladium extends BaseContract {
       overrides?: CallOverrides
     ): Promise<boolean>;
 
-    isWhitelist(
-      to: PromiseOrValue<string>,
-      overrides?: CallOverrides
-    ): Promise<boolean>;
-
-    mint(
-      amount: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
     name(overrides?: CallOverrides): Promise<string>;
 
     owner(overrides?: CallOverrides): Promise<string>;
 
     renounceOwnership(overrides?: CallOverrides): Promise<void>;
 
-    setWhiteList(
-      to: PromiseOrValue<string>,
-      value: PromiseOrValue<boolean>,
+    setTax(
+      _tax: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    setTaxReceiver(
+      _taxReceiver: PromiseOrValue<string>,
       overrides?: CallOverrides
     ): Promise<void>;
 
     symbol(overrides?: CallOverrides): Promise<string>;
+
+    tax(overrides?: CallOverrides): Promise<BigNumber>;
+
+    taxReceiver(overrides?: CallOverrides): Promise<string>;
 
     totalSupply(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -534,6 +573,12 @@ export interface PeggedPalladium extends BaseContract {
       newOwner?: PromiseOrValue<string> | null
     ): OwnershipTransferredEventFilter;
 
+    "TaxChange(uint256)"(tax?: null): TaxChangeEventFilter;
+    TaxChange(tax?: null): TaxChangeEventFilter;
+
+    "TaxReceiverChange(address)"(to?: null): TaxReceiverChangeEventFilter;
+    TaxReceiverChange(to?: null): TaxReceiverChangeEventFilter;
+
     "Transfer(address,address,uint256)"(
       from?: PromiseOrValue<string> | null,
       to?: PromiseOrValue<string> | null,
@@ -544,18 +589,15 @@ export interface PeggedPalladium extends BaseContract {
       to?: PromiseOrValue<string> | null,
       value?: null
     ): TransferEventFilter;
-
-    "WhitelistSet(address,bool)"(
-      to?: PromiseOrValue<string> | null,
-      value?: null
-    ): WhitelistSetEventFilter;
-    WhitelistSet(
-      to?: PromiseOrValue<string> | null,
-      value?: null
-    ): WhitelistSetEventFilter;
   };
 
   estimateGas: {
+    airdrop(
+      amount: PromiseOrValue<BigNumberish>,
+      addresses: PromiseOrValue<string>[],
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
     allowance(
       owner: PromiseOrValue<string>,
       spender: PromiseOrValue<string>,
@@ -568,14 +610,15 @@ export interface PeggedPalladium extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
+    approveToken(
+      spender: PromiseOrValue<string>,
+      amount: PromiseOrValue<BigNumberish>,
+      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
     balanceOf(
       account: PromiseOrValue<string>,
       overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
-    burn(
-      amount: PromiseOrValue<BigNumberish>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
     decimals(overrides?: CallOverrides): Promise<BigNumber>;
@@ -592,16 +635,6 @@ export interface PeggedPalladium extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
-    isWhitelist(
-      to: PromiseOrValue<string>,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
-    mint(
-      amount: PromiseOrValue<BigNumberish>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<BigNumber>;
-
     name(overrides?: CallOverrides): Promise<BigNumber>;
 
     owner(overrides?: CallOverrides): Promise<BigNumber>;
@@ -610,13 +643,21 @@ export interface PeggedPalladium extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
-    setWhiteList(
-      to: PromiseOrValue<string>,
-      value: PromiseOrValue<boolean>,
+    setTax(
+      _tax: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
+    setTaxReceiver(
+      _taxReceiver: PromiseOrValue<string>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
     symbol(overrides?: CallOverrides): Promise<BigNumber>;
+
+    tax(overrides?: CallOverrides): Promise<BigNumber>;
+
+    taxReceiver(overrides?: CallOverrides): Promise<BigNumber>;
 
     totalSupply(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -640,6 +681,12 @@ export interface PeggedPalladium extends BaseContract {
   };
 
   populateTransaction: {
+    airdrop(
+      amount: PromiseOrValue<BigNumberish>,
+      addresses: PromiseOrValue<string>[],
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
+
     allowance(
       owner: PromiseOrValue<string>,
       spender: PromiseOrValue<string>,
@@ -652,14 +699,15 @@ export interface PeggedPalladium extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
+    approveToken(
+      spender: PromiseOrValue<string>,
+      amount: PromiseOrValue<BigNumberish>,
+      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
+
     balanceOf(
       account: PromiseOrValue<string>,
       overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    burn(
-      amount: PromiseOrValue<BigNumberish>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
     decimals(overrides?: CallOverrides): Promise<PopulatedTransaction>;
@@ -676,16 +724,6 @@ export interface PeggedPalladium extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
-    isWhitelist(
-      to: PromiseOrValue<string>,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    mint(
-      amount: PromiseOrValue<BigNumberish>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<PopulatedTransaction>;
-
     name(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     owner(overrides?: CallOverrides): Promise<PopulatedTransaction>;
@@ -694,13 +732,21 @@ export interface PeggedPalladium extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
-    setWhiteList(
-      to: PromiseOrValue<string>,
-      value: PromiseOrValue<boolean>,
+    setTax(
+      _tax: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
+
+    setTaxReceiver(
+      _taxReceiver: PromiseOrValue<string>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
     symbol(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    tax(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    taxReceiver(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     totalSupply(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
