@@ -16,5 +16,3 @@ export type { IERC20 } from "./@openzeppelin/contracts/token/ERC20/IERC20";
 export { IERC20__factory } from "./factories/@openzeppelin/contracts/token/ERC20/IERC20__factory";
 export type { PeggedPalladium } from "./contracts/PeggedPalladium";
 export { PeggedPalladium__factory } from "./factories/contracts/PeggedPalladium__factory";
-export type { TestToken } from "./contracts/TestToken";
-export { TestToken__factory } from "./factories/contracts/TestToken__factory";

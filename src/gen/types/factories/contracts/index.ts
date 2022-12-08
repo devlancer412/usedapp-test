@@ -2,4 +2,3 @@
 /* tslint:disable */
 /* eslint-disable */
 export { PeggedPalladium__factory } from "./PeggedPalladium__factory";
-export { TestToken__factory } from "./TestToken__factory";

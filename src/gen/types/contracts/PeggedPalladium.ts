@@ -9,6 +9,7 @@ import type {
   CallOverrides,
   ContractTransaction,
   Overrides,
+  PayableOverrides,
   PopulatedTransaction,
   Signer,
   utils,
@@ -35,12 +36,16 @@ export interface PeggedPalladiumInterface extends utils.Interface {
     "burn(uint256)": FunctionFragment;
     "decimals()": FunctionFragment;
     "decreaseAllowance(address,uint256)": FunctionFragment;
+    "getEth(uint256)": FunctionFragment;
+    "getToken()": FunctionFragment;
     "increaseAllowance(address,uint256)": FunctionFragment;
     "isWhitelist(address)": FunctionFragment;
     "mint(uint256)": FunctionFragment;
     "name()": FunctionFragment;
     "owner()": FunctionFragment;
+    "rate()": FunctionFragment;
     "renounceOwnership()": FunctionFragment;
+    "setRate(uint256)": FunctionFragment;
     "setWhiteList(address,bool)": FunctionFragment;
     "symbol()": FunctionFragment;
     "totalSupply()": FunctionFragment;
@@ -57,12 +62,16 @@ export interface PeggedPalladiumInterface extends utils.Interface {
       | "burn"
       | "decimals"
       | "decreaseAllowance"
+      | "getEth"
+      | "getToken"
       | "increaseAllowance"
       | "isWhitelist"
       | "mint"
       | "name"
       | "owner"
+      | "rate"
       | "renounceOwnership"
+      | "setRate"
       | "setWhiteList"
       | "symbol"
       | "totalSupply"
@@ -93,6 +102,11 @@ export interface PeggedPalladiumInterface extends utils.Interface {
     values: [PromiseOrValue<string>, PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(
+    functionFragment: "getEth",
+    values: [PromiseOrValue<BigNumberish>]
+  ): string;
+  encodeFunctionData(functionFragment: "getToken", values?: undefined): string;
+  encodeFunctionData(
     functionFragment: "increaseAllowance",
     values: [PromiseOrValue<string>, PromiseOrValue<BigNumberish>]
   ): string;
@@ -106,9 +120,14 @@ export interface PeggedPalladiumInterface extends utils.Interface {
   ): string;
   encodeFunctionData(functionFragment: "name", values?: undefined): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
+  encodeFunctionData(functionFragment: "rate", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "renounceOwnership",
     values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setRate",
+    values: [PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(
     functionFragment: "setWhiteList",
@@ -145,6 +164,8 @@ export interface PeggedPalladiumInterface extends utils.Interface {
     functionFragment: "decreaseAllowance",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "getEth", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "getToken", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "increaseAllowance",
     data: BytesLike
@@ -156,10 +177,12 @@ export interface PeggedPalladiumInterface extends utils.Interface {
   decodeFunctionResult(functionFragment: "mint", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "name", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "rate", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "renounceOwnership",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "setRate", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "setWhiteList",
     data: BytesLike
@@ -183,13 +206,11 @@ export interface PeggedPalladiumInterface extends utils.Interface {
     "Approval(address,address,uint256)": EventFragment;
     "OwnershipTransferred(address,address)": EventFragment;
     "Transfer(address,address,uint256)": EventFragment;
-    "WhitelistSet(address,bool)": EventFragment;
   };
 
   getEvent(nameOrSignatureOrTopic: "Approval"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "OwnershipTransferred"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "Transfer"): EventFragment;
-  getEvent(nameOrSignatureOrTopic: "WhitelistSet"): EventFragment;
 }
 
 export interface ApprovalEventObject {
@@ -227,17 +248,6 @@ export type TransferEvent = TypedEvent<
 >;
 
 export type TransferEventFilter = TypedEventFilter<TransferEvent>;
-
-export interface WhitelistSetEventObject {
-  to: string;
-  value: boolean;
-}
-export type WhitelistSetEvent = TypedEvent<
-  [string, boolean],
-  WhitelistSetEventObject
->;
-
-export type WhitelistSetEventFilter = TypedEventFilter<WhitelistSetEvent>;
 
 export interface PeggedPalladium extends BaseContract {
   connect(signerOrProvider: Signer | Provider | string): this;
@@ -296,6 +306,15 @@ export interface PeggedPalladium extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
+    getEth(
+      amount: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
+
+    getToken(
+      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
+
     increaseAllowance(
       spender: PromiseOrValue<string>,
       addedValue: PromiseOrValue<BigNumberish>,
@@ -316,7 +335,14 @@ export interface PeggedPalladium extends BaseContract {
 
     owner(overrides?: CallOverrides): Promise<[string]>;
 
+    rate(overrides?: CallOverrides): Promise<[BigNumber]>;
+
     renounceOwnership(
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
+
+    setRate(
+      _rate: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
@@ -379,6 +405,15 @@ export interface PeggedPalladium extends BaseContract {
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
+  getEth(
+    amount: PromiseOrValue<BigNumberish>,
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
+  getToken(
+    overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
   increaseAllowance(
     spender: PromiseOrValue<string>,
     addedValue: PromiseOrValue<BigNumberish>,
@@ -399,7 +434,14 @@ export interface PeggedPalladium extends BaseContract {
 
   owner(overrides?: CallOverrides): Promise<string>;
 
+  rate(overrides?: CallOverrides): Promise<BigNumber>;
+
   renounceOwnership(
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
+  setRate(
+    _rate: PromiseOrValue<BigNumberish>,
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
@@ -462,6 +504,13 @@ export interface PeggedPalladium extends BaseContract {
       overrides?: CallOverrides
     ): Promise<boolean>;
 
+    getEth(
+      amount: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    getToken(overrides?: CallOverrides): Promise<void>;
+
     increaseAllowance(
       spender: PromiseOrValue<string>,
       addedValue: PromiseOrValue<BigNumberish>,
@@ -482,7 +531,14 @@ export interface PeggedPalladium extends BaseContract {
 
     owner(overrides?: CallOverrides): Promise<string>;
 
+    rate(overrides?: CallOverrides): Promise<BigNumber>;
+
     renounceOwnership(overrides?: CallOverrides): Promise<void>;
+
+    setRate(
+      _rate: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<void>;
 
     setWhiteList(
       to: PromiseOrValue<string>,
@@ -544,15 +600,6 @@ export interface PeggedPalladium extends BaseContract {
       to?: PromiseOrValue<string> | null,
       value?: null
     ): TransferEventFilter;
-
-    "WhitelistSet(address,bool)"(
-      to?: PromiseOrValue<string> | null,
-      value?: null
-    ): WhitelistSetEventFilter;
-    WhitelistSet(
-      to?: PromiseOrValue<string> | null,
-      value?: null
-    ): WhitelistSetEventFilter;
   };
 
   estimateGas: {
@@ -586,6 +633,15 @@ export interface PeggedPalladium extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
+    getEth(
+      amount: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
+    getToken(
+      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
     increaseAllowance(
       spender: PromiseOrValue<string>,
       addedValue: PromiseOrValue<BigNumberish>,
@@ -606,7 +662,14 @@ export interface PeggedPalladium extends BaseContract {
 
     owner(overrides?: CallOverrides): Promise<BigNumber>;
 
+    rate(overrides?: CallOverrides): Promise<BigNumber>;
+
     renounceOwnership(
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
+    setRate(
+      _rate: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
@@ -670,6 +733,15 @@ export interface PeggedPalladium extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
+    getEth(
+      amount: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
+
+    getToken(
+      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
+
     increaseAllowance(
       spender: PromiseOrValue<string>,
       addedValue: PromiseOrValue<BigNumberish>,
@@ -690,7 +762,14 @@ export interface PeggedPalladium extends BaseContract {
 
     owner(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
+    rate(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
     renounceOwnership(
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
+
+    setRate(
+      _rate: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 

@@ -3,14 +3,14 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
-import { Mainnet, DAppProvider, Config, Goerli } from '@usedapp/core';
+import { Mainnet, DAppProvider, Config, Rinkeby } from '@usedapp/core';
 import { getDefaultProvider } from 'ethers';
 
 const config: Config = {
   readOnlyChainId: Mainnet.chainId,
   readOnlyUrls: {
     [Mainnet.chainId]: getDefaultProvider('mainnet'),
-    [Goerli.chainId]: getDefaultProvider('goerli'),
+    [Rinkeby.chainId]: getDefaultProvider('rinkeby'),
   },
 };
 
