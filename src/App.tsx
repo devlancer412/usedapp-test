@@ -6,6 +6,7 @@ import {
   useTokenBalance,
   useContractFunction,
 } from '@usedapp/core';
+import WalletConnectProvider from '@walletconnect/web3-provider';
 import { formatEther } from '@ethersproject/units';
 import { BigNumber } from '@ethersproject/bignumber';
 import { Contract } from '@ethersproject/contracts';
@@ -23,7 +24,8 @@ const contract = new Contract(
 ) as PeggedPalladium;
 
 function App() {
-  const { account, activateBrowserWallet } = useEthers();
+  const { active, account, activateBrowserWallet, activate, deactivate } =
+    useEthers();
   // call
   const ethBalance = useEtherBalance(account) || BigNumber.from(0);
   const tokenBalance =
@@ -125,6 +127,18 @@ function App() {
     }
   }, [rate]);
 
+  const onWalletConnect = async () => {
+    try {
+      const provider = new WalletConnectProvider({
+        infuraId: 'd8df2cb7844e4a54ab0a782f608749dd',
+      });
+      await provider.enable();
+      await activate(provider);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   return (
     <section className='py-1 bg-blueGray-50'>
       <div className='w-full xl:w-1/2 px-4 mx-auto mt-24'>
@@ -138,17 +152,27 @@ function App() {
               </div>
               <div className='relative w-full px-4 max-w-full flex-grow flex-1 text-right'>
                 {!account ? (
-                  <button
-                    className='bg-indigo-500 text-white active:bg-indigo-600 text-base font-bold uppercase px-3 py-1 rounded outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150'
-                    type='button'
-                    onClick={() => activateBrowserWallet()}
-                  >
-                    Connect wallet
-                  </button>
+                  <>
+                    <button
+                      className='bg-indigo-500 text-white active:bg-indigo-600 text-base font-bold uppercase px-3 py-1 rounded outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150'
+                      type='button'
+                      onClick={() => activateBrowserWallet()}
+                    >
+                      Browser Wallet
+                    </button>
+                    <button
+                      className='bg-indigo-500 text-white active:bg-indigo-600 text-base font-bold uppercase px-3 py-1 rounded outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150'
+                      type='button'
+                      onClick={() => onWalletConnect()}
+                    >
+                      Wallet Connect
+                    </button>
+                  </>
                 ) : (
                   <button
                     className='bg-indigo-500 text-white active:bg-indigo-600 text-base font-bold px-3 py-1 rounded outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150'
                     type='button'
+                    onClick={() => deactivate()}
                   >
                     {account?.substring(0, 5) +
                       '...' +
@@ -187,7 +211,7 @@ function App() {
                         : formatEther(rate?.value[0] as BigNumber)}
                     </td>
                   </tr>
-                  {account === owner?.value?.at(0) ? (
+                  {account && account === owner?.value?.at(0) ? (
                     <>
                       <tr>
                         <th className='border-t-0 px-6 align-middle border-l-0 border-r-0 text-base whitespace-nowrap p-4 text-left'>
@@ -239,79 +263,83 @@ function App() {
                 </tbody>
               </table>
             </div>
-            <div className='w-full grid grid-cols-2 gap-4 mt-5'>
-              <div className='bg-[#243034] flex flex-col items-center p-10 rounded-lg'>
-                <h1 className='text-white text-[20px] leading-[30px] font-bold mb-5'>
-                  To Token
-                </h1>
-                <input
-                  type='number'
-                  min={0}
-                  max={parseFloat(formatEther(ethBalance))}
-                  value={mintAmount}
-                  onChange={(e) => setMintAmount(parseFloat(e.target.value))}
-                  className='text-center mb-5 w-40'
-                />
-                {account === owner?.value?.at(0) ? (
-                  <button
-                    type='button'
-                    className='rounded-[5px] py-2 px-10 text-black bg-[#10E98C] text-[15px] leading-[22px]'
-                    onClick={mintToken}
-                  >
-                    Mint Token
-                  </button>
-                ) : (
-                  <></>
-                )}
-                {isWhitelist?.value?.at(0) ? (
-                  <button
-                    type='button'
-                    className='rounded-[5px] py-2 px-10 text-black bg-[#10E98C] text-[15px] leading-[22px] mt-2'
-                    onClick={swapEthToToken}
-                  >
-                    Get Token
-                  </button>
-                ) : (
-                  <></>
-                )}
+            {account ? (
+              <div className='w-full grid grid-cols-2 gap-4 mt-5'>
+                <div className='bg-[#243034] flex flex-col items-center p-10 rounded-lg'>
+                  <h1 className='text-white text-[20px] leading-[30px] font-bold mb-5'>
+                    To Token
+                  </h1>
+                  <input
+                    type='number'
+                    min={0}
+                    max={parseFloat(formatEther(ethBalance))}
+                    value={mintAmount}
+                    onChange={(e) => setMintAmount(parseFloat(e.target.value))}
+                    className='text-center mb-5 w-40'
+                  />
+                  {account === owner?.value?.at(0) ? (
+                    <button
+                      type='button'
+                      className='rounded-[5px] py-2 px-10 text-black bg-[#10E98C] text-[15px] leading-[22px]'
+                      onClick={mintToken}
+                    >
+                      Mint Token
+                    </button>
+                  ) : (
+                    <></>
+                  )}
+                  {isWhitelist?.value?.at(0) ? (
+                    <button
+                      type='button'
+                      className='rounded-[5px] py-2 px-10 text-black bg-[#10E98C] text-[15px] leading-[22px] mt-2'
+                      onClick={swapEthToToken}
+                    >
+                      Get Token
+                    </button>
+                  ) : (
+                    <></>
+                  )}
+                </div>
+                <div className='bg-[#243034] flex flex-col items-center p-10 rounded-lg'>
+                  <h1 className='text-white text-[20px] leading-[30px] font-bold mb-5'>
+                    From Token
+                  </h1>
+                  <input
+                    type='number'
+                    min={0}
+                    max={tokenBalance.toNumber()}
+                    value={burnAmount}
+                    onChange={(e) => setBurnAmount(parseFloat(e.target.value))}
+                    className='text-center mb-5 w-40'
+                  />
+                  {account === owner?.value?.at(0) ? (
+                    <button
+                      type='button'
+                      className='rounded-[5px] py-2 px-10 text-black bg-[#10E98C] text-[15px] leading-[22px]'
+                      onClick={burnToken}
+                    >
+                      Burn Token
+                    </button>
+                  ) : (
+                    <></>
+                  )}
+                  {isWhitelist?.value?.at(0) ? (
+                    <button
+                      type='button'
+                      className='rounded-[5px] py-2 px-10 text-black bg-[#10E98C] text-[15px] leading-[22px] mt-2'
+                      onClick={swapTokenToEth}
+                    >
+                      Swap Token
+                    </button>
+                  ) : (
+                    <></>
+                  )}
+                </div>
               </div>
-              <div className='bg-[#243034] flex flex-col items-center p-10 rounded-lg'>
-                <h1 className='text-white text-[20px] leading-[30px] font-bold mb-5'>
-                  From Token
-                </h1>
-                <input
-                  type='number'
-                  min={0}
-                  max={tokenBalance.toNumber()}
-                  value={burnAmount}
-                  onChange={(e) => setBurnAmount(parseFloat(e.target.value))}
-                  className='text-center mb-5 w-40'
-                />
-                {account === owner?.value?.at(0) ? (
-                  <button
-                    type='button'
-                    className='rounded-[5px] py-2 px-10 text-black bg-[#10E98C] text-[15px] leading-[22px]'
-                    onClick={burnToken}
-                  >
-                    Burn Token
-                  </button>
-                ) : (
-                  <></>
-                )}
-                {isWhitelist?.value?.at(0) ? (
-                  <button
-                    type='button'
-                    className='rounded-[5px] py-2 px-10 text-black bg-[#10E98C] text-[15px] leading-[22px] mt-2'
-                    onClick={swapTokenToEth}
-                  >
-                    Swap Token
-                  </button>
-                ) : (
-                  <></>
-                )}
-              </div>
-            </div>
-            {!isWhitelist?.value?.at(0) ? (
+            ) : (
+              <></>
+            )}
+            {account && !isWhitelist?.value?.at(0) ? (
               <div className='w-full'>Your wallet is not whitelisted</div>
             ) : (
               <></>
