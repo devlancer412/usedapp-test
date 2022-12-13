@@ -5,6 +5,7 @@ import {
   useEthers,
   useTokenBalance,
   useContractFunction,
+  Mainnet,
 } from '@usedapp/core';
 import WalletConnectProvider from '@walletconnect/web3-provider';
 import { formatEther } from '@ethersproject/units';
@@ -24,8 +25,15 @@ const contract = new Contract(
 ) as PeggedPalladium;
 
 function App() {
-  const { active, account, activateBrowserWallet, activate, deactivate } =
-    useEthers();
+  const {
+    active,
+    account,
+    activateBrowserWallet,
+    activate,
+    deactivate,
+    chainId,
+    switchNetwork,
+  } = useEthers();
   // call
   const ethBalance = useEtherBalance(account) || BigNumber.from(0);
   const tokenBalance =
@@ -70,6 +78,14 @@ function App() {
   const [burnAmount, setBurnAmount] = useState<number>(0);
   const [exchangeRate, setExchangeRate] = useState<number>(0);
   const [address, setAddress] = useState<string>('');
+
+  useEffect(() => {
+    (async () => {
+      if (chainId !== Mainnet.chainId) {
+        await switchNetwork(Mainnet.chainId);
+      }
+    })();
+  }, [chainId, switchNetwork]);
 
   const setWhiteList = async () => {
     try {
