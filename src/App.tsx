@@ -222,7 +222,7 @@ function App() {
                           />
                         </th>
                         <td className='border-t-0 px-6 align-middle border-l-0 border-r-0 text-base whitespace-nowrap p-4 '>
-                          <div className='grid grid-cols-2 gap-2'>
+                          <div className='grid grid-cols-1 md:grid-cols-2 gap-2'>
                             <button
                               type='button'
                               className='rounded-[5px] py-2 px-10 text-black bg-[#10E98C] text-[15px] leading-[22px]'
@@ -245,7 +245,7 @@ function App() {
                           />
                         </th>
                         <td className='border-t-0 px-6 align-middle border-l-0 border-r-0 text-base whitespace-nowrap p-4 '>
-                          <div className='grid grid-cols-2 gap-2'>
+                          <div className='grid grid-cols-1 md:grid-cols-2 gap-2'>
                             <button
                               type='button'
                               className='rounded-[5px] py-2 px-10 text-black bg-[#10E98C] text-[15px] leading-[22px]'
